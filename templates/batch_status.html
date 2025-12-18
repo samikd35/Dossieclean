@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Processing Status - DossieClean{% endblock %}
+
+{% block additional_head %}
+<style>
+    .status-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .status-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .status-summary {
+        background-color: #f5f5f7;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .status-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .stat-box {
+        text-align: center;
+        padding: 15px;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 14px;
+        color: #666;
+    }
+    
+    .progress-container {
+        margin: 30px 0;
+    }
+    
+    .progress-bar-outer {
+        height: 20px;
+        background-color: #e0e0e0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-bar-inner {
+        height: 100%;
+        background: linear-gradient(90deg, #4c8bf5, #3f51b5);
+        border-radius: 10px;
+        transition: width 0.5s ease-in-out;
+    }
+    
+    .progress-text {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 14px;
+        color: #333;
+    }
+    
+    .file-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .file-table th, .file-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .file-table th {
+        background-color: #f5f5f7;
+        font-weight: 600;
+    }
+    
+    .file-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .status-pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    
+    .status-pending {
+        background-color: #FFF9C4;
+        color: #F57F17;
+    }
+    
+    .status-processing {
+        background-color: #E3F2FD;
+        color: #1565C0;
+    }
+    
+    .status-success {
+        background-color: #E8F5E9;
+        color: #2E7D32;
+    }
+    
+    .status-failed {
+        background-color: #FFEBEE;
+        color: #C62828;
+    }
+    
+    .status-skipped {
+        background-color: #F5F5F5;
+        color: #757575;
+    }
+    
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .action-button {
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        text-align: center;
+    }
+    
+    .primary-button {
+        background-color: #4c8bf5;
+        color: white;
+        border: none;
+    }
+    
+    .primary-button:hover {
+        background-color: #3f51b5;
+    }
+    
+    .secondary-button {
+        background-color: #f5f5f7;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    
+    .secondary-button:hover {
+        background-color: #e0e0e0;
+    }
+    
+    .loading-indicator {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top-color: #3f51b5;
+        animation: spin 1s linear infinite;
+        margin-left: 5px;
+    }
+    
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+    
+    .refresh-info {
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+        margin-top: 10px;
+    }
+    
+    /* Dark mode */
+    .dark-theme .status-summary,
+    .dark-theme .file-table th {
+        background-color: #333;
+        color: #fff;
+    }
+    
+    .dark-theme .stat-box,
+    .dark-theme .file-table {
+        background-color: #222;
+        color: #fff;
+    }
+    
+    .dark-theme .stat-label {
+        color: #bbb;
+    }
+    
+    .dark-theme .file-table td {
+        border-bottom: 1px solid #444;
+    }
+    
+    .dark-theme .progress-bar-outer {
+        background-color: #444;
+    }
+    
+    .dark-theme .secondary-button {
+        background-color: #333;
+        color: #fff;
+        border-color: #555;
+    }
+    
+    .dark-theme .secondary-button:hover {
+        background-color: #444;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="status-container">
+    <div class="status-header">
+        <h1>Batch Processing Status</h1>
+        <div>
+            <span id="last-updated"></span>
+            <button id="refresh-button" class="action-button secondary-button">
+                Refresh Status
+            </button>
+        </div>
+    </div>
+    
+    <div class="status-summary">
+        <h2>Batch Summary</h2>
+        <p>Batch ID: <span id="batch-id">{{ batch_id }}</span></p>
+        <p>Started: <span id="start-time">-</span></p>
+        
+        <div class="status-stats">
+            <div class="stat-box">
+                <div class="stat-value" id="total-files">-</div>
+                <div class="stat-label">Total Files</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="processed-files">-</div>
+                <div class="stat-label">Processed</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="succeeded-files">-</div>
+                <div class="stat-label">Succeeded</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="failed-files">-</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="skipped-files">-</div>
+                <div class="stat-label">Skipped</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="progress-container">
+        <h3>Overall Progress</h3>
+        <div class="progress-bar-outer">
+            <div class="progress-bar-inner" id="progress-bar" style="width: 0%"></div>
+        </div>
+        <div class="progress-text" id="progress-text">0%</div>
+    </div>
+    
+    <h3>File Status <span id="status-loading" class="loading-indicator"></span></h3>
+    <div class="table-container">
+        <table class="file-table">
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Status</th>
+                    <th>Started</th>
+                    <th>Completed</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody id="file-status-tbody">
+                <!-- File status rows will be populated dynamically -->
+                <tr>
+                    <td colspan="5" class="text-center">Loading file status...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="action-buttons">
+        <a href="{{ url_for('dashboard') }}" class="action-button secondary-button">Back to Dashboard</a>
+        <button id="retry-failed-button" class="action-button primary-button">Retry Failed Tasks</button>
+    </div>
+    
+    <p class="refresh-info">Status updates automatically every 5 seconds</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const batchId = document.getElementById('batch-id').textContent;
+        let autoRefreshInterval;
+        let isPolling = false;
+        
+        // Initial load
+        updateBatchStatus();
+        
+        // Set up auto-refresh
+        startAutoRefresh();
+        
+        // Manual refresh button
+        document.getElementById('refresh-button').addEventListener('click', function() {
+            updateBatchStatus();
+        });
+        
+        // Retry failed button
+        document.getElementById('retry-failed-button').addEventListener('click', function() {
+            retryFailedTasks();
+        });
+        
+        function startAutoRefresh() {
+            // Clear any existing interval
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            
+            // Set new interval - refresh every 5 seconds
+            autoRefreshInterval = setInterval(updateBatchStatus, 5000);
+            
+            // Update UI to show auto-refresh is active
+            document.querySelector('.refresh-info').textContent = 'Status updates automatically every 5 seconds';
+        }
+        
+        function updateBatchStatus() {
+            // Prevent multiple simultaneous requests
+            if (isPolling) return;
+            
+            isPolling = true;
+            document.getElementById('status-loading').style.display = 'inline-block';
+            
+            fetch(`/api/batch_status/${batchId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch batch status');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update batch summary
+                    document.getElementById('start-time').textContent = formatDateTime(data.start_time);
+                    document.getElementById('total-files').textContent = data.total_files;
+                    document.getElementById('processed-files').textContent = data.processed;
+                    document.getElementById('succeeded-files').textContent = data.succeeded;
+                    document.getElementById('failed-files').textContent = data.failed;
+                    document.getElementById('skipped-files').textContent = data.skipped;
+                    
+                    // Update progress bar
+                    const progressPercent = data.total_files > 0 
+                        ? Math.round((data.processed / data.total_files) * 100) 
+                        : 0;
+                    document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+                    document.getElementById('progress-text').textContent = `${progressPercent}% (${data.processed}/${data.total_files})`;
+                    
+                    // Update last updated time
+                    document.getElementById('last-updated').textContent = `Last updated: ${formatTime(new Date())}`;
+                    
+                    // Update file status table
+                    updateFileStatusTable(data.files);
+                    
+                    // If all files are processed, potentially stop auto-refresh
+                    if (data.processed >= data.total_files && data.total_files > 0) {
+                        // Maybe stop auto-refresh here if desired
+                        // clearInterval(autoRefreshInterval);
+                        // document.querySelector('.refresh-info').textContent = 'Processing complete. Auto-refresh stopped.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching batch status:', error);
+                })
+                .finally(() => {
+                    isPolling = false;
+                    document.getElementById('status-loading').style.display = 'none';
+                });
+        }
+        
+        function updateFileStatusTable(files) {
+            const tbody = document.getElementById('file-status-tbody');
+            tbody.innerHTML = ''; // Clear existing rows
+            
+            if (!files || files.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="5" class="text-center">No files found in this batch</td>';
+                tbody.appendChild(row);
+                return;
+            }
+            
+            // Sort files by status - processing first, then pending, then completed
+            const sortedFiles = [...files].sort((a, b) => {
+                const statusOrder = {
+                    'processing': 0,
+                    'pending': 1,
+                    'success': 2,
+                    'failed': 3,
+                    'skipped': 4
+                };
+                
+                return (statusOrder[a.status] || 999) - (statusOrder[b.status] || 999);
+            });
+            
+            sortedFiles.forEach(file => {
+                const row = document.createElement('tr');
+                
+                // Determine status CSS class
+                let statusClass = 'status-pending';
+                if (file.status === 'processing') statusClass = 'status-processing';
+                else if (file.status === 'success') statusClass = 'status-success';
+                else if (file.status === 'failed') statusClass = 'status-failed';
+                else if (file.status === 'skipped') statusClass = 'status-skipped';
+                
+                row.innerHTML = `
+                    <td>${file.name}</td>
+                    <td><span class="status-pill ${statusClass}">${file.status}</span></td>
+                    <td>${file.start_time ? formatTime(new Date(file.start_time)) : '-'}</td>
+                    <td>${file.end_time ? formatTime(new Date(file.end_time)) : '-'}</td>
+                    <td>${file.message || '-'}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        function retryFailedTasks() {
+            const retryButton = document.getElementById('retry-failed-button');
+            retryButton.disabled = true;
+            retryButton.textContent = 'Retrying...';
+            
+            fetch(`/api/retry_failed/${batchId}`, {
+                method: 'POST'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to retry tasks');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert('Failed tasks have been requeued for processing');
+                        // Force refresh status
+                        updateBatchStatus();
+                    } else {
+                        alert(`Error: ${data.message || 'Unknown error'}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error retrying tasks:', error);
+                    alert('An error occurred while trying to retry tasks');
+                })
+                .finally(() => {
+                    retryButton.disabled = false;
+                    retryButton.textContent = 'Retry Failed Tasks';
+                });
+        }
+        
+        function formatDateTime(dateTimeStr) {
+            if (!dateTimeStr) return '-';
+            const date = new Date(dateTimeStr);
+            return `${date.toLocaleDateString()} ${formatTime(date)}`;
+        }
+        
+        function formatTime(date) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+    });
+</script>
+{% endblock %}

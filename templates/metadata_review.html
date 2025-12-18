@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Metadata Review{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Review Metadata</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>{{ filename }}</h5>
+        </div>
+        <div class="card-body">
+            <form action="/save" method="post">
+                <input type="hidden" name="file_path" value="{{ file_path }}">
+                <input type="hidden" name="doc_id" value="{{ doc_id }}">
+                
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <input type="text" class="form-control" id="title" name="title" value="{{ metadata.title }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="authors" class="form-label">Authors</label>
+                    <input type="text" class="form-control" id="authors" name="authors" value="{{ authors }}" required>
+                    <small class="form-text text-muted">Separate multiple authors with commas</small>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="year" class="form-label">Year</label>
+                    <input type="text" class="form-control" id="year" name="year" value="{{ metadata.year|default('') }}">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="keywords" class="form-label">Keywords</label>
+                    <input type="text" class="form-control" id="keywords" name="keywords" value="{{ metadata.keywords|join(', ') }}">
+                    <small class="form-text text-muted">Separate keywords with commas</small>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="abstract" class="form-label">Abstract</label>
+                    <textarea class="form-control" id="abstract" name="abstract" rows="5">{{ metadata.abstract|default('') }}</textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Document Information</label>
+                    <ul class="list-group">
+                        <li class="list-group-item">Pages: {{ page_count }}</li>
+                        <li class="list-group-item">Document ID: {{ doc_id }}</li>
+                    </ul>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="/" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Document</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

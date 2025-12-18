@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}DossieClean - Metadata Preview{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="preview-section">
+        <h1>Metadata Preview</h1>
+        <p class="subtitle">Review and edit the metadata extracted from <strong>{{ filename }}</strong></p>
+        
+        <div class="preview-container">
+            <form action="{{ url_for('save_document') }}" method="post" class="metadata-form">
+                <input type="hidden" name="file_path" value="{{ file_path }}">
+                
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" name="title" value="{{ metadata.title }}" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="authors">Authors</label>
+                    <input type="text" id="authors" name="authors" value="{{ metadata.authors|join(', ') }}" class="form-control">
+                    <small class="form-text">Enter multiple authors separated by commas</small>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="year">Year</label>
+                        <input type="text" id="year" name="year" value="{{ metadata.year }}" class="form-control">
+                    </div>
+                    
+                    <div class="form-group half">
+                        <label for="document_type">Document Type</label>
+                        <select id="document_type" name="document_type" class="form-control">
+                            <option value="" {% if not metadata.document_type %}selected{% endif %}>Select Type</option>
+                            <option value="thesis" {% if metadata.document_type == 'thesis' %}selected{% endif %}>Thesis</option>
+                            <option value="journal_article" {% if metadata.document_type == 'journal_article' %}selected{% endif %}>Journal Article</option>
+                            <option value="conference_paper" {% if metadata.document_type == 'conference_paper' %}selected{% endif %}>Conference Paper</option>
+                            <option value="book" {% if metadata.document_type == 'book' %}selected{% endif %}>Book</option>
+                            <option value="report" {% if metadata.document_type == 'report' %}selected{% endif %}>Report</option>
+                            <option value="other" {% if metadata.document_type == 'other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="journal_or_university">Journal/University</label>
+                    <input type="text" id="journal_or_university" name="journal_or_university" value="{{ metadata.journal_or_university }}" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <input type="text" id="department" name="department" value="{{ metadata.department }}" class="form-control">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group third">
+                        <label for="volume">Volume</label>
+                        <input type="text" id="volume" name="volume" value="{{ metadata.volume }}" class="form-control">
+                    </div>
+                    
+                    <div class="form-group third">
+                        <label for="issue">Issue</label>
+                        <input type="text" id="issue" name="issue" value="{{ metadata.issue }}" class="form-control">
+                    </div>
+                    
+                    <div class="form-group third">
+                        <label for="pages">Pages</label>
+                        <input type="text" id="pages" name="pages" value="{{ metadata.pages }}" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="doi">DOI</label>
+                    <input type="text" id="doi" name="doi" value="{{ metadata.doi }}" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="keywords">Keywords</label>
+                    <input type="text" id="keywords" name="keywords" value="{{ metadata.keywords|join(', ') }}" class="form-control">
+                    <small class="form-text">Enter multiple keywords separated by commas</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="abstract">Abstract</label>
+                    <textarea id="abstract" name="abstract" class="form-control" rows="6">{{ metadata.abstract }}</textarea>
+                </div>
+                
+                <div class="form-group info-box">
+                    <h3>File Information</h3>
+                    <div class="info-item">
+                        <span class="info-label">Page Count:</span>
+                        <span class="info-value">{{ metadata.page_count }}</span>
+                        <input type="hidden" name="page_count" value="{{ metadata.page_count }}">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">File Size:</span>
+                        <span class="info-value">{{ metadata.file_size_kb }} KB</span>
+                        <input type="hidden" name="file_size_kb" value="{{ metadata.file_size_kb }}">
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Extraction Date:</span>
+                        <span class="info-value">{{ metadata.extraction_date }}</span>
+                        <input type="hidden" name="extraction_date" value="{{ metadata.extraction_date }}">
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="icon">💾</span> Save to Database
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+{% endblock %}

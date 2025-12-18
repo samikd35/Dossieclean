@@ -1,0 +1,76 @@
+# Git attributes for DossieClean
+# https://git-scm.com/docs/gitattributes
+
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Source code
+*.py text diff=python
+*.js text
+*.css text
+*.html text diff=html
+
+# Documentation
+*.md text diff=markdown
+*.txt text
+*.rst text
+
+# Configuration
+*.json text
+*.yml text
+*.yaml text
+*.toml text
+*.ini text
+*.cfg text
+*.conf text
+
+# Shell scripts
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Windows scripts
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Docker
+Dockerfile text
+docker-compose*.yml text
+
+# Git
+.gitattributes text
+.gitignore text
+.gitmodules text
+
+# GitHub
+*.md linguist-detectable
+LICENSE text
+
+# Binary files (do not normalize)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+
+# Exclude from language statistics
+docs/* linguist-documentation
+tests/* linguist-vendored=false
+
+# Export ignore (files not included in archives)
+.gitattributes export-ignore
+.gitignore export-ignore
+.editorconfig export-ignore
+.pre-commit-config.yaml export-ignore
+.flake8 export-ignore
+pytest.ini export-ignore
+tests/ export-ignore
+docs/ export-ignore

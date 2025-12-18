@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}DossieClean - PDF Processing Home{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="hero">
+        <h1>DossieClean</h1>
+        <p class="subtitle">PDF Processing & Vector Storage System</p>
+        
+        <div class="upload-container">
+            <form id="upload-form" action="{{ url_for('process_document') }}" method="post" enctype="multipart/form-data" class="upload-form">
+                <div class="file-input-container">
+                    <input type="file" name="file" id="pdf-file" accept=".pdf" required>
+                    <label for="pdf-file" class="file-input-label">
+                        <span class="icon">📄</span>
+                        <span class="label-text">Choose PDF File</span>
+                    </label>
+                    <span class="file-name" id="file-name">No file selected</span>
+                </div>
+                <div class="mt-3 text-center">
+                    <p class="text-muted"><small>For batch processing of multiple files, use the batch upload button below.</small></p>
+                </div>
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-primary">
+                        <span class="icon">🔍</span>
+                        Process Single File
+                    </button>
+                    <a href="{{ url_for('batch_upload_form') }}" class="btn btn-secondary">
+                        <span class="icon">📚</span>
+                        Batch Upload
+                    </a>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="features">
+        <h2>Features</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h3>Metadata Extraction</h3>
+                <p>Automatically extract key metadata from PDF documents using AI</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">✏️</div>
+                <h3>Metadata Editing</h3>
+                <p>Review and edit extracted metadata before saving to database</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧩</div>
+                <h3>PDF Chunking</h3>
+                <p>Automatically split PDFs into smaller chunks for efficient storage and retrieval</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>Vector Search</h3>
+                <p>Semantic search across your PDF collection using vector embeddings</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works">
+        <h2>How It Works</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Upload PDF</h3>
+                <p>Upload your academic or research PDF document</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Extract & Edit</h3>
+                <p>Review and edit the automatically extracted metadata</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Store & Index</h3>
+                <p>Save to MongoDB with vector embeddings for semantic search</p>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <h3>Search & Retrieve</h3>
+                <p>Find relevant documents and chunks based on semantic search</p>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+    document.getElementById('pdf-file').addEventListener('change', function(e) {
+        const fileName = e.target.files[0]?.name || 'No file selected';
+        document.getElementById('file-name').textContent = fileName;
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,57 @@
+# DossieClean Docker Compose Configuration
+# Usage: docker-compose up -d
+
+version: '3.8'
+
+services:
+  dossieclean:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: dossieclean
+    restart: unless-stopped
+    ports:
+      - "${PORT:-5000}:5000"
+    environment:
+      # OpenAI Configuration
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Azure Blob Storage
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING}
+      - AZURE_CONTAINER_NAME=${AZURE_CONTAINER_NAME:-pdf-documents}
+      # Qdrant Vector Database
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+      # Database Configuration
+      - DB_NAME=${DB_NAME:-Dossie}
+      - COLLECTION_NAME=${COLLECTION_NAME:-AAU_PDF}
+      # Application Configuration
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - CHUNK_SIZE=${CHUNK_SIZE:-512}
+      - CHUNK_OVERLAP=${CHUNK_OVERLAP:-50}
+      - FLASK_DEBUG=${FLASK_DEBUG:-False}
+      - FLASK_ENV=${FLASK_ENV:-production}
+    volumes:
+      # Persist uploads and batch status (optional, for debugging)
+      - dossieclean_uploads:/app/uploads
+      - dossieclean_batch:/app/batch_status
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  dossieclean_uploads:
+    driver: local
+  dossieclean_batch:
+    driver: local
+
+# Development override example (use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up)
+# Create docker-compose.dev.yml for development-specific settings

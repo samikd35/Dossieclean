@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}DossieClean - Document Details{% endblock %}
+
+{% block content %}
+<div class="container document-view">
+    <div class="document-header">
+        <h1>{{ document.metadata.title }}</h1>
+        
+        <div class="document-actions">
+            <a href="{{ url_for('download_document', doc_id=document._id) }}" class="btn btn-primary">
+                <span class="icon">⬇️</span> Download PDF
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline">
+                <span class="icon">←</span> Back to Dashboard
+            </a>
+        </div>
+    </div>
+    
+    <div class="document-container">
+        <div class="document-details">
+            <div class="details-card">
+                <h2>Document Metadata</h2>
+                
+                <div class="metadata-group">
+                    <h3>Basic Information</h3>
+                    <div class="metadata-grid">
+                        {% if document.metadata.authors %}
+                        <div class="metadata-item">
+                            <div class="metadata-label">Authors</div>
+                            <div class="metadata-value">{{ document.metadata.authors|join(', ') }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if document.metadata.year %}
+                        <div class="metadata-item">
+                            <div class="metadata-label">Year</div>
+                            <div class="metadata-value">{{ document.metadata.year }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if document.metadata.document_type %}
+                        <div class="metadata-item">
+                            <div class="metadata-label">Document Type</div>
+                            <div class="metadata-value">{{ document.metadata.document_type }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if document.metadata.journal_or_university %}
+                        <div class="metadata-item">
+                            <div class="metadata-label">Journal/University</div>
+                            <div class="metadata-value">{{ document.metadata.journal_or_university }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if document.metadata.department %}
+                        <div class="metadata-item">
+                            <div class="metadata-label">Department</div>
+                            <div class="metadata-value">{{ document.metadata.department }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="metadata-group">
+                    <h3>Publication Details</h3>
+                    <div class="metadata-grid">
+                        {% if document.metadata.volume %}
+                        <div class="metadata-item">
+                            <div class="metadata-label">Volume</div>
+                            <div class="metadata-value">{{ document.metadata.volume }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if document.metadata.issue %}
+                        <div class="metadata-item">
+                            <div class="metadata-label">Issue</div>
+                            <div class="metadata-value">{{ document.metadata.issue }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if document.metadata.pages %}
+                        <div class="metadata-item">
+                            <div class="metadata-label">Pages</div>
+                            <div class="metadata-value">{{ document.metadata.pages }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if document.metadata.doi %}
+                        <div class="metadata-item">
+                            <div class="metadata-label">DOI</div>
+                            <div class="metadata-value">{{ document.metadata.doi }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if document.metadata.abstract %}
+                <div class="metadata-group">
+                    <h3>Abstract</h3>
+                    <div class="metadata-abstract">
+                        {{ document.metadata.abstract }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if document.metadata.keywords and document.metadata.keywords|length > 0 %}
+                <div class="metadata-group">
+                    <h3>Keywords</h3>
+                    <div class="keywords-container">
+                        {% for keyword in document.metadata.keywords %}
+                        <div class="keyword-tag">{{ keyword }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="metadata-group">
+                    <h3>File Information</h3>
+                    <div class="metadata-grid">
+                        <div class="metadata-item">
+                            <div class="metadata-label">Filename</div>
+                            <div class="metadata-value">{{ document.filename }}</div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-label">Page Count</div>
+                            <div class="metadata-value">{{ document.metadata.page_count }}</div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-label">File Size</div>
+                            <div class="metadata-value">{{ document.metadata.file_size_kb }} KB</div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-label">Upload Date</div>
+                            <div class="metadata-value">{{ document.upload_date.strftime('%Y-%m-%d') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="document-chunks">
+            <div class="chunks-header">
+                <h2>Document Chunks ({{ chunks|length }})</h2>
+                <div class="chunks-filter">
+                    <input type="text" id="chunk-filter" placeholder="Filter chunks...">
+                </div>
+            </div>
+            
+            <div class="chunks-container">
+                {% if chunks and chunks|length > 0 %}
+                    {% for chunk in chunks %}
+                    <div class="chunk-item">
+                        <div class="chunk-header">
+                            <div class="chunk-number">Chunk #{{ chunk.chunk_index + 1 }}</div>
+                        </div>
+                        <div class="chunk-content">{{ chunk.text }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="empty-chunks">
+                    <p>No chunks available for this document.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chunkFilter = document.getElementById('chunk-filter');
+        const chunkItems = document.querySelectorAll('.chunk-item');
+        
+        chunkFilter.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            
+            chunkItems.forEach(function(item) {
+                const content = item.querySelector('.chunk-content').textContent.toLowerCase();
+                if (content.includes(query)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

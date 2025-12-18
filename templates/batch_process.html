@@ -1,0 +1,616 @@
+{% extends "base.html" %}
+
+{% block title %}DossieClean - Batch Processing{% endblock %}
+
+{% block additional_head %}
+<style>
+    .file-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .batch-process-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 25px;
+        background-color: var(--card-bg);
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .process-info {
+        background-color: var(--info-bg);
+        border-left: 4px solid var(--accent-color);
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+    .process-info ul {
+        margin-top: 10px;
+        margin-bottom: 0;
+        padding-left: 25px;
+    }
+    .process-info li {
+        margin-bottom: 5px;
+    }
+    .process-header {
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--border-light);
+        padding-bottom: 15px;
+    }
+    .process-header h1 {
+        font-size: 1.8em;
+        color: var(--heading-color);
+        margin-bottom: 8px;
+    }
+    .progress-container {
+        margin: 25px 0;
+        padding: 15px;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+    }
+    .progress {
+        height: 12px;
+        border-radius: 6px;
+        margin: 10px 0;
+        overflow: hidden;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+    .stat-card {
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        color: white;
+    }
+    .stat-card.success {
+        background-color: var(--success-color);
+    }
+    .stat-card.error {
+        background-color: var(--error-color);
+    }
+    .stat-card.warning {
+        background-color: var(--warning-color);
+    }
+    .stat-card.info {
+        background-color: var(--info-color);
+    }
+    .current-file-box {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        padding: 10px 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .live-log {
+        height: 150px;
+        overflow-y: auto;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 0.85em;
+        margin-top: 10px;
+    }
+    .log-entry {
+        margin: 2px 0;
+        padding: 2px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    .log-entry.success {
+        color: var(--success-color);
+    }
+    .log-entry.error {
+        color: var(--error-color);
+    }
+    .log-entry.info {
+        color: var(--info-color);
+    }
+    .dark-theme .log-entry {
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .stat-card h3 {
+        font-size: 2em;
+        margin: 0;
+        margin-bottom: 5px;
+    }
+    .stat-card p {
+        margin: 0;
+        font-weight: 500;
+    }
+    .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        background-color: var(--card-bg-color);
+        box-shadow: var(--shadow);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .results-table th, 
+    .results-table td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .results-table th {
+        background-color: rgba(0,0,0,0.03);
+        font-weight: 500;
+    }
+    .dark-theme .results-table th {
+        background-color: rgba(255,255,255,0.05);
+    }
+    .results-table tr:last-child td {
+        border-bottom: none;
+    }
+    .table-responsive {
+        overflow-x: auto;
+        border-radius: 8px;
+    }
+    .results-table .filename {
+        max-width: 30%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .results-table td.details {
+        word-break: break-word;
+    }
+    .action-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+    }
+    .action-buttons .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="batch-process-container">
+        <div class="process-header">
+            <h1>Batch PDF Processing</h1>
+            <p>You've selected {{ count }} files for batch processing. Review the files below and click "Start Processing" when ready.</p>
+            <p class="text-muted">Batch ID: {{ batch_id }}</p>
+        </div>
+
+        <div class="process-info">
+            <h3>Processing Information</h3>
+            <ul>
+                <li>Documents will be uploaded to Azure Blob Storage</li>
+                <li>Metadata will be extracted automatically using AI</li>
+                <li>Text will be chunked and embedded with OpenAI</li>
+                <li>Vector embeddings will be stored in Qdrant for search</li>
+                <li>Real-time progress will be displayed during processing</li>
+            </ul>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <h4>Selected Files</h4>
+                <p class="text-muted">The following files will be processed:</p>
+                <div class="list-group">
+                    {% for file in files %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ file.original_name }}</h5>
+                            <small>{{ file.size_formatted }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Progress Section (hidden initially) -->
+        <div id="progressSection" class="row mb-3" style="display: none;">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Batch Processing Progress</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Overall progress -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Overall Progress:</span>
+                                <span id="progressPercent">0%</span>
+                            </div>
+                            <div class="progress" style="height: 25px;">
+                                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Processing stats -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h3 id="totalCount">{{ files|length }}</h3>
+                                        <p class="mb-0">Total Files</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-info text-white">
+                                    <div class="card-body text-center">
+                                        <h3 id="processedCount">0</h3>
+                                        <p class="mb-0">Processed</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body text-center">
+                                        <h3 id="successCount">0</h3>
+                                        <p class="mb-0">Successful</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-danger text-white">
+                                    <div class="card-body text-center">
+                                        <h3 id="failedCount">0</h3>
+                                        <p class="mb-0">Failed</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Live log display -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Processing Log</h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="liveLog" class="bg-dark text-light p-2" style="height: 250px; overflow-y: auto; font-family: monospace; font-size: 0.9rem;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Legacy progress container removed -->
+        
+        <div id="results-container" style="display: none;">
+            <h3>Processing Results</h3>
+            
+            <div class="stats-grid">
+                <div class="stat-card success">
+                    <h3 id="success-count">0</h3>
+                    <p>Successful</p>
+                </div>
+                <div class="stat-card error">
+                    <h3 id="failed-count">0</h3>
+                    <p>Failed</p>
+                </div>
+                <div class="stat-card warning">
+                    <h3 id="skipped-count">0</h3>
+                    <p>Skipped</p>
+                </div>
+                <div class="stat-card info">
+                    <h3 id="total-count">0</h3>
+                    <p>Total</p>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th width="20%">Filename</th>
+                            <th width="15%">Status</th>
+                            <th width="65%">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-table-body">
+                        <!-- Results will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                <span class="icon">←</span> Back to Home
+            </a>
+            <button id="start-processing" class="btn btn-primary">
+                <span class="icon">▶</span> Start Processing
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get DOM elements for UI manipulation
+        const startButton = document.getElementById('start-processing');
+        const actionsSection = document.querySelector('.action-buttons');
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const totalCountElement = document.getElementById('totalCount');
+        const processedCountElement = document.getElementById('processedCount');
+        const successCountElement = document.getElementById('successCount');
+        const failedCountElement = document.getElementById('failedCount');
+        const liveLogElement = document.getElementById('liveLog');
+        const resultsSection = document.getElementById('resultsSection');
+        
+        // Variables for tracking progress
+        const batchId = "{{ batch_id }}"; // Batch ID from server
+        const totalFiles = parseInt("{{ files|length|default(count, true) }}"); // Total number of files
+        let isProcessing = false; // Processing state flag
+        let statusInterval = null; // Status polling interval
+        let logInterval = null; // Log polling interval
+        let lastLogId = 0; // Last log ID processed
+        
+        // For debugging
+        console.log("Batch ID:", batchId);
+        console.log("Total files:", totalFiles);
+        
+        /**
+         * Add a log entry to the live log display
+         */
+        function addLogEntry(message, level = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            let logClass = '';
+            
+            switch(level) {
+                case 'error':
+                    logClass = 'text-danger';
+                    break;
+                case 'warning':
+                    logClass = 'text-warning';
+                    break;
+                case 'success':
+                    logClass = 'text-success';
+                    break;
+                default:
+                    logClass = 'text-light';
+            }
+            
+            const logLine = document.createElement('div');
+            logLine.className = logClass;
+            logLine.innerHTML = `[${timestamp}] ${message}`;
+            liveLogElement.appendChild(logLine);
+            
+            // Auto-scroll to bottom
+            liveLogElement.scrollTop = liveLogElement.scrollHeight;
+        }
+        
+        /**
+         * Update progress UI with batch status data
+         */
+        function updateProgressUI(data) {
+            const total = data.total || totalFiles;
+            const processed = data.processed || 0;
+            const succeeded = data.succeeded || 0;
+            const failed = data.failed || 0;
+            const progress = total ? Math.round((processed / total) * 100) : 0;
+            const currentFile = data.current_file || '';
+            
+            console.log('Updating progress UI:', { processed, total, progress, currentFile });
+            
+            // Update progress bar
+            progressBar.style.width = progress + '%';
+            progressBar.setAttribute('aria-valuenow', progress);
+            progressPercent.innerText = progress + '%';
+            
+            // Update counters
+            totalCountElement.innerText = total;
+            processedCountElement.innerText = processed;
+            successCountElement.innerText = succeeded;
+            failedCountElement.innerText = failed;
+            
+            // Add a currently processing indicator if available
+            if (currentFile && !data.is_complete) {
+                // Look for or create a current file indicator
+                let currentFileIndicator = document.getElementById('currentFileIndicator');
+                if (!currentFileIndicator) {
+                    const progressBarParent = progressBar.parentElement;
+                    const indicatorDiv = document.createElement('div');
+                    indicatorDiv.id = 'currentFileIndicator';
+                    indicatorDiv.className = 'alert alert-info mt-2';
+                    progressBarParent.parentNode.insertBefore(indicatorDiv, progressBarParent.nextSibling);
+                    currentFileIndicator = indicatorDiv;
+                }
+                
+                // Update the indicator
+                currentFileIndicator.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div>
+                        <strong class="ml-2">Currently processing: ${currentFile}</strong>
+                    </div>
+                `;
+            } else if (!currentFile && document.getElementById('currentFileIndicator')) {
+                // Remove the indicator if processing is complete or no current file
+                document.getElementById('currentFileIndicator').remove();
+            }
+        }
+        
+        /**
+         * Start periodic batch status updates
+         */
+        function startStatusUpdates() {
+            if (!batchId) return;
+            
+            // Clear any existing interval
+            if (statusInterval) clearInterval(statusInterval);
+            
+            // Set up new polling interval with reduced frequency (every 3 seconds)
+            statusInterval = setInterval(function() {
+                // Make request to status API
+                fetch(`/api/batch_status/${batchId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update UI with status data
+                        updateProgressUI(data);
+                        
+                        // Check if processing is complete
+                        if (data.is_complete) {
+                            clearInterval(statusInterval);
+                            addLogEntry('Batch processing completed', 'success');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching batch status:', error);
+                        addLogEntry('Error updating status: ' + error.message, 'error');
+                    });
+            }, 3000); // Update every 3 seconds instead of every second
+        }
+        
+        /**
+         * Start periodic log updates
+         */
+        function startLogUpdates() {
+            if (!batchId) return;
+            
+            // Clear any existing interval
+            if (logInterval) clearInterval(logInterval);
+            
+            // Set up new polling interval with reduced frequency
+            logInterval = setInterval(function() {
+                // Make request to logs API
+                fetch(`/api/batch_logs/${batchId}?last_entry=${lastLogId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.logs && data.logs.length > 0) {
+                            // Update logs
+                            data.logs.forEach(function(log) {
+                                addLogEntry(log.message, log.level);
+                                lastLogId = log.id;
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching logs:', error);
+                    });
+            }, 3000); // Update every 3 seconds to reduce server load
+        }
+        
+        /**
+         * Handle start processing button click
+         */
+        startButton.addEventListener('click', function() {
+            console.log('Start button clicked! Batch ID:', batchId);
+            
+            // Show the progress section and hide the action buttons
+            progressSection.style.display = 'block';
+            actionsSection.style.display = 'none';
+            
+            // Add initial log entry
+            addLogEntry('Starting batch processing...', 'info');
+            
+            // Start status and log polling
+            startStatusUpdates();
+            startLogUpdates();
+            
+            // Make API request to start processing
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/batch_upload_execute', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            
+            // Handle response
+            xhr.onload = function() {
+                console.log('Received response:', xhr.status);
+                if (xhr.status === 200) {
+                    // When server processing completes, it returns HTML for the results page
+                    // We'll stop our polling and display the results
+                    if (statusInterval) clearInterval(statusInterval);
+                    if (logInterval) clearInterval(logInterval);
+                    
+                    // Redirect to the results page (which is what the server returns)
+                    document.open();
+                    document.write(xhr.responseText);
+                    document.close();
+                } else {
+                    // Error handling
+                    console.error('Server error:', xhr.statusText);
+                    addLogEntry(`Server error: ${xhr.statusText}`, 'error');
+                    actionsSection.style.display = 'block';
+                }
+            };
+            
+            // Handle network errors
+            xhr.onerror = function() {
+                console.error('Network error occurred');
+                addLogEntry('Network error occurred', 'error');
+                actionsSection.style.display = 'block';
+                startButton.innerHTML = '<span class="icon">▶</span> Try Again';
+            };
+            
+            // Send the batch ID to process
+            console.log('Sending batch ID:', batchId);
+            xhr.send(JSON.stringify({ batch_id: batchId }));
+        });
+        
+        /**
+         * Initialize processing for an existing batch (if we're loading the page for an in-progress batch)
+         */
+        function checkExistingBatch() {
+            if (!batchId) return;
+            
+            // Check if this batch is already in progress
+            fetch(`/api/batch_status/${batchId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.start_time && !data.is_complete) {
+                        // This batch is already in progress
+                        addLogEntry('Reconnected to in-progress batch ' + batchId, 'info');
+                        
+                        // Show progress section and hide action buttons
+                        progressSection.style.display = 'block';
+                        actionsSection.style.display = 'none';
+                        
+                        // Start status and log updates
+                        updateProgressUI(data);
+                        startStatusUpdates();
+                        startLogUpdates();
+                    } else if (data.is_complete) {
+                        // This batch is already complete
+                        addLogEntry('Batch ' + batchId + ' is already complete', 'info');
+                        
+                        // Update UI elements
+                        progressSection.style.display = 'block';
+                        actionsSection.style.display = 'none';
+                        updateProgressUI(data);
+                        
+                        // Show completion message
+                        addLogEntry(`Batch processing completed: ${data.succeeded} succeeded, ${data.failed} failed`, 'success');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking batch status:', error);
+                });
+        }
+        
+        // Check for existing batch when page loads
+        checkExistingBatch();
+        
+        // Initialize the page when it first loads
+        // This ensures we're displaying accurate information for the progress section
+        totalCountElement.innerText = totalFiles;
+
+        // Check for existing batch when page loads
+        checkExistingBatch();
+    });
+</script>
+{% endblock %}

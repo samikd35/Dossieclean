@@ -1,0 +1,607 @@
+{% extends "base.html" %}
+
+{% block title %}DossieClean - Batch Upload{% endblock %}
+
+{% block additional_head %}
+<style>
+    .file-list {
+        margin-top: 20px;
+        padding: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        max-height: 250px;
+        overflow-y: auto;
+        display: none;
+        background-color: var(--card-bg);
+    }
+    .file-item {
+        padding: 10px;
+        margin: 5px 0;
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        align-items: center;
+    }
+    .file-item:last-child {
+        border-bottom: none;
+    }
+    .file-item .file-icon {
+        margin-right: 10px;
+        font-size: 1.2em;
+    }
+    .file-item .file-details {
+        flex-grow: 1;
+    }
+    .file-item .file-size {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+    }
+    .custom-file-upload {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 20px;
+        background-color: var(--accent-color-light);
+        color: var(--accent-color);
+        border: 2px solid var(--accent-color);
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .custom-file-upload:hover {
+        background-color: var(--accent-color);
+        color: white;
+    }
+    .custom-file-upload i, 
+    .custom-file-upload .icon {
+        margin-right: 8px;
+        font-size: 1.2em;
+    }
+    #files {
+        display: none;
+    }
+    .batch-upload-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 30px;
+        background-color: var(--card-bg);
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .info-box {
+        margin-top: 30px;
+        padding: 20px;
+        background-color: var(--info-bg);
+        border-left: 4px solid var(--accent-color);
+        border-radius: 4px;
+    }
+    .info-box h3 {
+        color: var(--accent-color);
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+    .info-box ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+    .info-box li {
+        margin-bottom: 8px;
+        line-height: 1.5;
+    }
+    .info-box li:last-child {
+        margin-bottom: 0;
+    }
+    .form-actions {
+        margin-top: 25px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+    #fileCount {
+        margin-top: 15px;
+        font-weight: 600;
+        color: var(--accent-color);
+    }
+    .upload-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .upload-header h1 {
+        font-size: 2.2em;
+        color: var(--heading-color);
+        margin-bottom: 10px;
+    }
+    .upload-header p {
+        font-size: 1.1em;
+        color: var(--text-secondary);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="upload-header">
+        <h1>Batch PDF Upload</h1>
+        <p>Upload multiple PDF files at once for automated processing and embedding in the DossieClean system.</p>
+    </div>
+
+    <div class="batch-upload-container">
+        {% if error %}
+        <div class="alert alert-error">
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+        
+        <form action="{{ url_for('batch_upload') }}" method="post" enctype="multipart/form-data" id="uploadForm" class="upload-form">
+            <div class="form-group text-center">
+                <label for="files" class="custom-file-upload">
+                    <span class="icon">📄</span> Select PDF Files
+                </label>
+                <input type="file" id="files" name="pdf_files" multiple accept=".pdf" required onchange="updateFileList()">
+                <div id="fileCount"></div>
+                <div id="fileList" class="file-list"></div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="uploadBtn">
+                    <span class="icon">📤</span> Upload Files
+                </button>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                    <span class="icon">✖</span> Cancel
+                </a>
+            </div>
+        </form>
+        
+        <div class="info-box">
+            <h3>Batch Processing Information</h3>
+            <ul>
+                <li><strong>Preview:</strong> Files will be shown for review before processing</li>
+                <li><strong>Metadata:</strong> Information will be extracted automatically using AI</li>
+                <li><strong>Text Extraction:</strong> Full document text will be processed and embedded</li>
+                <li><strong>Storage:</strong> Documents will be stored in Azure with vector embeddings in Qdrant</li>
+                <li><strong>Progress Tracking:</strong> Real-time status updates will be provided during processing</li>
+            </ul>
+        </div>
+        
+        <!-- Processing Progress Section (initially hidden) -->
+        <div id="progressSection" class="mt-4" style="display: none;">
+            <h3 class="text-center mb-4">Processing Files</h3>
+            
+            <!-- Overall Progress -->
+            <div class="mb-4">
+                <h4>Overall Progress</h4>
+                <div class="progress mb-2">
+                    <div id="progressBar" class="progress-bar bg-primary" role="progressbar" style="width: 0%" 
+                        aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        <span id="progressPercent">0%</span>
+                    </div>
+                </div>
+                
+                <!-- Process Statistics -->
+                <div class="d-flex justify-content-between text-sm mt-2">
+                    <div><span class="text-muted">Total:</span> <span id="totalCount">0</span></div>
+                    <div><span class="text-muted">Processed:</span> <span id="processedCount">0</span></div>
+                    <div><span class="text-muted">Success:</span> <span id="successCount">0</span></div>
+                    <div><span class="text-muted">Failed:</span> <span id="failedCount">0</span></div>
+                </div>
+            </div>
+            
+            <!-- Processing Log -->
+            <div class="mb-4">
+                <h4>Processing Log</h4>
+                <div id="liveLog" class="live-log p-3 small" style="height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 5px; background-color: #1a1a1a; color: #f0f0f0;"></div>
+            </div>
+            
+            <!-- File Status Table -->
+            <div id="fileStatusSection" class="mb-4">
+                <h4>File Status</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Status</th>
+                                <th>Started</th>
+                                <th>Completed</th>
+                                <th>Message</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fileStatusTable">
+                            <!-- File status rows will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+    function updateFileList() {
+        const fileInput = document.getElementById('files');
+        const fileList = document.getElementById('fileList');
+        const fileCount = document.getElementById('fileCount');
+        const uploadBtn = document.getElementById('uploadBtn');
+        
+        // Clear previous list
+        fileList.innerHTML = '';
+        
+        if (fileInput.files.length > 0) {
+            fileList.style.display = 'block';
+            fileCount.textContent = `Selected ${fileInput.files.length} file(s)`;
+            uploadBtn.innerHTML = `<span class="icon">📤</span> Upload ${fileInput.files.length} File(s)`;
+            
+            // Add each file to the list
+            for (let i = 0; i < fileInput.files.length; i++) {
+                const file = fileInput.files[i];
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                
+                const fileIcon = document.createElement('div');
+                fileIcon.className = 'file-icon';
+                fileIcon.textContent = '📄';
+                
+                const fileDetails = document.createElement('div');
+                fileDetails.className = 'file-details';
+                
+                const fileName = document.createElement('div');
+                fileName.className = 'file-name';
+                fileName.textContent = file.name;
+                
+                const fileSize = document.createElement('div');
+                fileSize.className = 'file-size';
+                fileSize.textContent = formatFileSize(file.size);
+                
+                fileDetails.appendChild(fileName);
+                fileDetails.appendChild(fileSize);
+                
+                fileItem.appendChild(fileIcon);
+                fileItem.appendChild(fileDetails);
+                
+                fileList.appendChild(fileItem);
+            }
+        } else {
+            fileList.style.display = 'none';
+            fileCount.textContent = '';
+            uploadBtn.innerHTML = '<span class="icon">📤</span> Upload Files';
+        }
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' bytes';
+        else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        else return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+    
+    // Variables for tracking progress
+    let batchId = null;
+    let isProcessing = false;
+    let statusInterval = null;
+    let logInterval = null;
+    let lastLogId = 0;
+    
+    /**
+     * Add a log entry to the live log display
+     */
+    function addLogEntry(message, level = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        let logClass = '';
+        
+        switch(level) {
+            case 'error':
+                logClass = 'text-danger';
+                break;
+            case 'warning':
+                logClass = 'text-warning';
+                break;
+            case 'success':
+                logClass = 'text-success';
+                break;
+            default:
+                logClass = 'text-light';
+        }
+        
+        const logLine = document.createElement('div');
+        logLine.className = logClass;
+        logLine.innerHTML = `[${timestamp}] ${message}`;
+        
+        const liveLogElement = document.getElementById('liveLog');
+        if (liveLogElement) {
+            liveLogElement.appendChild(logLine);
+            // Auto-scroll to bottom
+            liveLogElement.scrollTop = liveLogElement.scrollHeight;
+        }
+    }
+    
+    /**
+     * Update progress UI with batch status data
+     */
+    function updateProgressUI(data) {
+        const total = data.total || 0;
+        const processed = data.processed || 0;
+        const succeeded = data.succeeded || 0;
+        const failed = data.failed || 0;
+        const progress = total ? Math.round((processed / total) * 100) : 0;
+        const currentFile = data.current_file || '';
+        
+        console.log('Updating progress UI:', { processed, total, progress, currentFile });
+        
+        // Update progress bar
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        if (progressBar && progressPercent) {
+            progressBar.style.width = progress + '%';
+            progressBar.setAttribute('aria-valuenow', progress);
+            progressPercent.innerText = progress + '%';
+        }
+        
+        // Update counters
+        document.getElementById('totalCount').innerText = total;
+        document.getElementById('processedCount').innerText = processed;
+        document.getElementById('successCount').innerText = succeeded;
+        document.getElementById('failedCount').innerText = failed;
+        
+        // Add a currently processing indicator if available
+        if (currentFile && !data.is_complete) {
+            // Look for or create a current file indicator
+            let currentFileIndicator = document.getElementById('currentFileIndicator');
+            if (!currentFileIndicator) {
+                const progressBarParent = progressBar.parentElement;
+                const indicatorDiv = document.createElement('div');
+                indicatorDiv.id = 'currentFileIndicator';
+                indicatorDiv.className = 'alert alert-info mt-2';
+                progressBarParent.parentNode.insertBefore(indicatorDiv, progressBarParent.nextSibling);
+                currentFileIndicator = indicatorDiv;
+            }
+            
+            // Update the indicator
+            currentFileIndicator.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div>
+                    <strong class="ml-2">Currently processing: ${currentFile}</strong>
+                </div>
+            `;
+        } else if (!currentFile && document.getElementById('currentFileIndicator')) {
+            // Remove the indicator if processing is complete or no current file
+            document.getElementById('currentFileIndicator').remove();
+        }
+        
+        // Update file status table if file data is available
+        if (data.files && data.files.length > 0) {
+            updateFileStatusTable(data.files);
+        }
+    }
+    
+    /**
+     * Update the file status table with current file statuses
+     */
+    function updateFileStatusTable(files) {
+        const fileStatusTable = document.getElementById('fileStatusTable');
+        if (!fileStatusTable) return;
+        
+        // Clear current table content
+        fileStatusTable.innerHTML = '';
+        
+        // Add each file row
+        files.forEach(file => {
+            const row = document.createElement('tr');
+            
+            // Determine status class
+            let statusClass = '';
+            switch (file.status) {
+                case 'success':
+                    statusClass = 'text-success';
+                    break;
+                case 'failed':
+                    statusClass = 'text-danger';
+                    break;
+                case 'processing':
+                    statusClass = 'text-primary';
+                    break;
+                default:
+                    statusClass = 'text-secondary';
+            }
+            
+            // Format timestamps
+            const startTime = file.start_time ? new Date(file.start_time).toLocaleTimeString() : '';
+            const endTime = file.end_time ? new Date(file.end_time).toLocaleTimeString() : '';
+            
+            // Build the row
+            row.innerHTML = `
+                <td>${file.name}</td>
+                <td><span class="${statusClass}">${file.status}</span></td>
+                <td>${startTime}</td>
+                <td>${endTime}</td>
+                <td>${file.message || ''}</td>
+            `;
+            
+            fileStatusTable.appendChild(row);
+        });
+    }
+    
+    /**
+     * Start periodic batch status updates
+     */
+    function startStatusUpdates() {
+        if (!batchId) return;
+        
+        // Clear any existing interval
+        if (statusInterval) clearInterval(statusInterval);
+        
+        // Set up new polling interval with reduced frequency (every 3 seconds)
+        statusInterval = setInterval(function() {
+            // Make request to status API
+            fetch(`/api/batch_status/${batchId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update UI with status data
+                    updateProgressUI(data);
+                    
+                    // Check if processing is complete
+                    if (data.is_complete) {
+                        clearInterval(statusInterval);
+                        addLogEntry('Batch processing completed', 'success');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching batch status:', error);
+                    addLogEntry('Error updating status: ' + error.message, 'error');
+                });
+        }, 3000); // Update every 3 seconds instead of every second
+    }
+    
+    /**
+     * Start periodic log updates
+     */
+    function startLogUpdates() {
+        if (!batchId) return;
+        
+        // Clear any existing interval
+        if (logInterval) clearInterval(logInterval);
+        
+        // Set up new polling interval with reduced frequency
+        logInterval = setInterval(function() {
+            // Make request to logs API
+            fetch(`/api/batch_logs/${batchId}?last_entry=${lastLogId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.logs && data.logs.length > 0) {
+                        // Update logs
+                        data.logs.forEach(function(log) {
+                            addLogEntry(log.message, log.level);
+                            lastLogId = log.id;
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching logs:', error);
+                });
+        }, 3000); // Update every 3 seconds to reduce server load
+    }
+
+    // Handle form submission via AJAX and show real-time progress
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('files');
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressSection = document.getElementById('progressSection');
+        
+        if (fileInput) {
+            // Force the multiple attribute to be set
+            fileInput.setAttribute('multiple', 'multiple');
+        }
+        
+        // Add form submission handler
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent regular form submission
+                
+                const files = fileInput.files;
+                if (files.length === 0) {
+                    alert('Please select at least one PDF file to upload.');
+                    return false;
+                }
+                
+                // Create FormData object for the AJAX request
+                const formData = new FormData(uploadForm);
+                
+                // Show loading in button
+                uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
+                uploadBtn.disabled = true;
+                
+                // Send AJAX request to upload files
+                fetch('/batch_upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Store batch ID for status updates
+                        batchId = data.batch_id;
+                        console.log('Batch ID:', batchId);
+                        
+                        // Show progress section
+                        progressSection.style.display = 'block';
+                        
+                        // Hide file list and form
+                        document.getElementById('fileList').style.display = 'none';
+                        document.getElementById('uploadBtn').style.display = 'none';
+                        document.querySelector('.custom-file-upload').style.display = 'none';
+                        document.getElementById('fileCount').style.display = 'none';
+                        
+                        // Add initial log entry
+                        addLogEntry('Files uploaded successfully. Starting batch processing...', 'success');
+                        
+                        // Start processing (send AJAX request)
+                        startProcessing();
+                    } else {
+                        // Show error
+                        alert('Error: ' + (data.message || 'Failed to upload files'));
+                        uploadBtn.innerHTML = '<span class="icon">📤</span> Upload Files';
+                        uploadBtn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error uploading files:', error);
+                    alert('Error: ' + error.message);
+                    uploadBtn.innerHTML = '<span class="icon">📤</span> Upload Files';
+                    uploadBtn.disabled = false;
+                });
+                
+                return false;
+            });
+        }
+    });
+    
+    /**
+     * Start the batch processing after files are uploaded
+     */
+    function startProcessing() {
+        if (!batchId) {
+            console.error('No batch ID available');
+            return;
+        }
+        
+        console.log('Starting batch processing for batch ID:', batchId);
+        
+        // Add log entry
+        addLogEntry('Starting batch processing...', 'info');
+        
+        // Start status and log polling
+        startStatusUpdates();
+        startLogUpdates();
+        
+        // Make API request to start processing
+        fetch('/batch_upload_execute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                batch_id: batchId
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Server error: ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Processing complete:', data);
+            if (!data.success) {
+                addLogEntry('Error: ' + (data.message || 'Unknown error'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error starting processing:', error);
+            addLogEntry('Error starting processing: ' + error.message, 'error');
+        });
+    }
+</script>
+{% endblock %}

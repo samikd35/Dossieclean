@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}DossieClean - Dashboard{% endblock %}
+
+{% block content %}
+<div class="container dashboard">
+    <div class="dashboard-header">
+        <h1>Dashboard</h1>
+    </div>
+
+    {% if request.args.get('status') == 'success' %}
+    <div class="alert alert-success">
+        {{ request.args.get('message', 'Operation completed successfully!') }}
+    </div>
+    {% endif %}
+
+    <div class="stats-container">
+        <div class="stats-card">
+            <div class="stats-icon">📚</div>
+            <div class="stats-content">
+                <h3>PDFs in Azure</h3>
+                <div class="stats-value">{{ stats.total_documents|default(0) }}</div>
+            </div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-icon">📄</div>
+            <div class="stats-content">
+                <h3>Total Pages</h3>
+                <div class="stats-value">{{ stats.total_pages|default(0) }}</div>
+            </div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-icon">🧩</div>
+            <div class="stats-content">
+                <h3>Total Chunks</h3>
+                <div class="stats-value">{{ stats.total_chunks|default(0) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="dashboard-card recent-docs">
+            <h2>Recent Documents</h2>
+            {% if stats.recent_documents and stats.recent_documents|length > 0 %}
+                <ul class="recent-list">
+                    {% for doc in stats.recent_documents %}
+                    <li>
+                        <a href="{{ url_for('view_document_details', doc_id=doc._id) }}" class="doc-link">
+                            <div class="doc-title">{{ doc.title|default('Untitled') }}</div>
+                            <div class="doc-meta">
+                                {% if doc.authors %}
+                                <span class="doc-authors">{{ doc.authors|join(', ') }}</span> • 
+                                {% endif %}
+                                <span class="doc-year">{{ doc.year|default('') }}</span>
+                                <span class="upload-date">{{ doc.upload_date_formatted }}</span>
+                            </div>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="empty-state">
+                    <p>No documents have been uploaded yet.</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary">Upload a Document</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}DossieClean - Settings{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="settings-section">
+        <h1>Application Settings</h1>
+        
+        {% if error %}
+        <div class="alert alert-error">
+            {{ error }}
+        </div>
+        {% endif %}
+        
+        {% if success %}
+        <div class="alert alert-success">
+            {{ success }}
+        </div>
+        {% endif %}
+        
+        <div class="settings-container">
+            <form action="{{ url_for('settings') }}" method="post" class="settings-form">
+                <div class="settings-group">
+                    <h2>Document Processing Settings</h2>
+                    
+                    <div class="form-group">
+                        <label for="chunk_size">Chunk Size (characters)</label>
+                        <input type="number" id="chunk_size" name="chunk_size" value="{{ chunk_size }}" min="100" max="2000" class="form-control">
+                        <small class="form-text">Recommended: 500-1000 characters per chunk</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="chunk_overlap">Chunk Overlap (characters)</label>
+                        <input type="number" id="chunk_overlap" name="chunk_overlap" value="{{ chunk_overlap }}" min="0" max="500" class="form-control">
+                        <small class="form-text">Recommended: 10-20% of chunk size</small>
+                    </div>
+                </div>
+                
+                <div class="settings-group">
+                    <h2>Appearance</h2>
+                    
+                    <div class="theme-settings">
+                        <div class="form-group">
+                            <label>Theme</label>
+                            <div class="theme-options">
+                                <label class="theme-option">
+                                    <input type="radio" name="theme" value="light" id="theme-light" checked>
+                                    <div class="theme-preview light-theme">
+                                        <div class="preview-header"></div>
+                                        <div class="preview-content">
+                                            <div class="preview-text"></div>
+                                            <div class="preview-text"></div>
+                                        </div>
+                                    </div>
+                                    <span>Light</span>
+                                </label>
+                                
+                                <label class="theme-option">
+                                    <input type="radio" name="theme" value="dark" id="theme-dark">
+                                    <div class="theme-preview dark-theme">
+                                        <div class="preview-header"></div>
+                                        <div class="preview-content">
+                                            <div class="preview-text"></div>
+                                            <div class="preview-text"></div>
+                                        </div>
+                                    </div>
+                                    <span>Dark</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-group">
+                    <h2>About</h2>
+                    
+                    <div class="about-info">
+                        <p><strong>DossieClean</strong> - PDF Processing & Vector Storage System</p>
+                        <p>Version 1.0.0</p>
+                        <p>A minimalist application for extracting metadata from PDF documents, chunking them for efficient storage, and creating vector embeddings for semantic search.</p>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <span class="icon">💾</span> Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Theme switching
+        const themeLightRadio = document.getElementById('theme-light');
+        const themeDarkRadio = document.getElementById('theme-dark');
+        
+        // Check current theme
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+            themeDarkRadio.checked = true;
+        } else {
+            themeLightRadio.checked = true;
+        }
+        
+        // Add event listeners
+        themeLightRadio.addEventListener('change', function() {
+            if (this.checked) {
+                document.body.classList.remove('dark-theme');
+                document.body.classList.add('light-theme');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+        
+        themeDarkRadio.addEventListener('change', function() {
+            if (this.checked) {
+                document.body.classList.remove('light-theme');
+                document.body.classList.add('dark-theme');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    });
+</script>
+{% endblock %}

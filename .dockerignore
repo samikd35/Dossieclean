@@ -1,0 +1,105 @@
+# DossieClean Docker Ignore File
+# Files and directories to exclude from Docker build context
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment files (secrets should be passed via environment variables)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+uploads/
+temp_uploads/
+batch_status/
+*.tmp
+*.temp
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Development files
+tests/
+*.test.py
+conftest.py
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Docker (avoid recursive copy)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Other
+LICENSE
+CHANGELOG.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+Implementation_plan.md
+tasks.md
+*.ini
+*.cfg
+pyproject.toml
+.editorconfig
+.flake8
+.pre-commit-config.yaml

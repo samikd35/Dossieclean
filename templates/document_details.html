@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Document Details{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Document Details</h1>
+    
+    {% if document %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{{ document.filename }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <h4>Metadata</h4>
+                    <table class="table">
+                        <tr>
+                            <th style="width: 150px;">Title</th>
+                            <td>{{ document.metadata.title }}</td>
+                        </tr>
+                        <tr>
+                            <th>Authors</th>
+                            <td>
+                                {% if document.metadata.authors is string %}
+                                    {{ document.metadata.authors }}
+                                {% else %}
+                                    {{ document.metadata.authors|join(', ') }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Year</th>
+                            <td>{{ document.metadata.year }}</td>
+                        </tr>
+                        <tr>
+                            <th>Keywords</th>
+                            <td>
+                                {% if document.metadata.keywords is string %}
+                                    {{ document.metadata.keywords }}
+                                {% else %}
+                                    {{ document.metadata.keywords|join(', ') }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Upload Date</th>
+                            <td>{{ document.upload_date|default('Unknown') }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-4">
+                    <h4>Abstract</h4>
+                    <div class="p-3 bg-light rounded">
+                        {{ document.metadata.abstract|default('No abstract available')|nl2br }}
+                    </div>
+                </div>
+            </div>
+            
+            {% if text_preview %}
+            <div class="mt-4">
+                <h4>Text Preview</h4>
+                <div class="p-3 bg-light rounded" style="max-height: 300px; overflow-y: auto;">
+                    {{ text_preview|nl2br }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('view_metadata') }}" class="btn btn-secondary">Back to List</a>
+                {% if document_url %}
+                <a href="{{ document_url }}" class="btn btn-primary" target="_blank">Download PDF</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-danger">
+        <p>Document not found. It may have been deleted or the ID is invalid.</p>
+        <a href="{{ url_for('view_metadata') }}" class="btn btn-primary">Back to Document List</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

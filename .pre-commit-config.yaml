@@ -1,0 +1,97 @@
+# Pre-commit hooks for DossieClean
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+# https://pre-commit.com
+
+repos:
+  # General hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^docs/
+      - id: end-of-file-fixer
+        exclude: ^docs/
+      - id: check-yaml
+        args: [--unsafe]
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: detect-private-key
+      - id: debug-statements
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # Python code formatting with Black
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        language_version: python3
+        args: [--line-length=100]
+
+  # Import sorting with isort
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [--profile=black, --line-length=100]
+
+  # Linting with flake8
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          - flake8-bugbear
+          - flake8-comprehensions
+        args: [--max-line-length=100]
+
+  # Security checks
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.7
+    hooks:
+      - id: bandit
+        args: [-c, pyproject.toml, -r, .]
+        additional_dependencies: ["bandit[toml]"]
+        exclude: ^tests/
+
+  # Check for secrets
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: package.lock.json
+
+# Configuration for specific hooks
+default_language_version:
+  python: python3
+
+# Skip hooks on certain files
+exclude: |
+  (?x)^(
+    \.git/|
+    \.venv/|
+    venv/|
+    __pycache__/|
+    \.eggs/|
+    .*\.egg-info/|
+    build/|
+    dist/|
+    node_modules/
+  )
+
+# CI configuration
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

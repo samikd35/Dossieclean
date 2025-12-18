@@ -1,0 +1,141 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dossie"
+version = "1.0.0"
+description = "A minimalist PDF processing and vector storage system"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+authors = [
+    {name = "DossieClean Contributors"}
+]
+keywords = [
+    "pdf",
+    "vector-database",
+    "semantic-search",
+    "document-processing",
+    "flask",
+    "openai",
+    "qdrant",
+    "azure"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: Flask",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Indexing",
+]
+
+dependencies = [
+    "flask>=2.0.0",
+    "pymongo>=4.0.0",
+    "python-dotenv>=1.0.0",
+    "PyPDF2>=3.0.0",
+    "openai>=1.0.0",
+    "requests>=2.0.0",
+    "Werkzeug>=2.0.0",
+    "qdrant-client>=1.5.0",
+    "azure-storage-blob>=12.13.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "isort>=5.12.0",
+    "pre-commit>=3.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/samikd35/Dossieclean_pdfvault"
+Documentation = "https://github.com/samikd35/Dossieclean_pdfvault#readme"
+Repository = "https://github.com/samikd35/Dossieclean_pdfvault.git"
+Issues = "https://github.com/samikd35/Dossieclean_pdfvault/issues"
+Changelog = "https://github.com/samikd35/Dossieclean_pdfvault/blob/main/CHANGELOG.md"
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | __pycache__
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+skip = [".git", "__pycache__", "venv", ".venv", "build", "dist"]
+known_first_party = ["dossieclean"]
+known_third_party = ["flask", "openai", "pymongo", "qdrant_client", "azure"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = [
+    "venv",
+    ".venv",
+    "tests",
+    "build",
+    "dist",
+]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+addopts = "-v --tb=short -ra"
+markers = [
+    "slow: marks tests as slow",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
