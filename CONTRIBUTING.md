@@ -73,8 +73,8 @@ Unsure where to begin? Look for issues labeled:
 
 1. **Fork and clone the repository**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/dossieclean.git
-   cd dossieclean
+   git clone https://github.com/YOUR_USERNAME/Dossieclean_pdfvault.git
+   cd Dossieclean_pdfvault
    ```
 
 2. **Create a virtual environment**
@@ -115,8 +115,10 @@ pytest
 pytest --cov=. --cov-report=term-missing
 
 # Run specific test file
-pytest tests/test_connections.py
+pytest tests/test_api_routes.py
 ```
+
+Environment-specific diagnostics are kept under `scripts/manual_checks/` and are not part of the CI test suite.
 
 ## Style Guidelines
 
@@ -140,9 +142,9 @@ We use the following tools to maintain code quality:
 Run formatting before committing:
 
 ```bash
-black app.py tests/
-flake8 app.py tests/
-isort app.py tests/
+black tests/
+flake8 tests/
+isort tests/
 ```
 
 ### Documentation Style
@@ -218,4 +220,4 @@ Feel free to open an issue with the `question` label if you have any questions a
 
 ---
 
-Thank you for contributing to DossieClean! 🎉
+Thank you for contributing to DossieClean.

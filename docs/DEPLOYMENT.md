@@ -246,12 +246,14 @@ docker run -d \
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SECRET_KEY` | `default_secret_key` | Flask session key |
+| `SECRET_KEY` | auto-generated per process | Flask session key (set explicitly in production) |
 | `COLLECTION_NAME` | `AAU_PDF` | Qdrant collection name |
 | `CHUNK_SIZE` | `512` | Text chunk size (tokens) |
 | `CHUNK_OVERLAP` | `50` | Chunk overlap (tokens) |
+| `MAX_UPLOAD_SIZE_MB` | `100` | Maximum upload size (MB) |
 | `FLASK_DEBUG` | `False` | Enable debug mode |
 | `PORT` | `5000` | Application port |
+| `DOSSIECLEAN_INIT_STORAGE` | `true` | Set `false` to skip storage init during tests/CI |
 
 ### Production Checklist
 

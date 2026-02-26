@@ -76,12 +76,13 @@ instance/
 # Uploads and temporary files
 uploads/
 temp_uploads/
+tmp/
+output/
 *.pdf
 *.PDF
 
 # Batch processing status
 batch_status/
-*.json
 
 # Logs
 *.log
@@ -92,6 +93,15 @@ dossieclean.log
 *.db
 *.sqlite
 *.sqlite3
+
+# Python tooling caches
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# Local runtime/config extras
+.python-version
+.envrc
 
 # ===========================
 # IDEs & Editors

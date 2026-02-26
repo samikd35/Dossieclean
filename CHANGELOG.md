@@ -8,13 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Open source preparation files (CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md)
-- Comprehensive .gitignore for Python/Flask projects
-- Enhanced .env.example with detailed documentation
-- MIT License
+- `SUPPORT.md` for contributor support channels
+- `CITATION.cff` for software citation metadata
+- `CODEOWNERS` and issue template config for repository governance
+- `dependabot.yml` for automated dependency update PRs
+- Deterministic unit tests for helper functions and API routes
 
 ### Changed
-- Improved documentation structure
+- Rewrote `README.md` with accurate setup, configuration, and testing guidance
+- Hardened `app.py` defaults for open source use:
+  - Ephemeral fallback when `SECRET_KEY` is unset
+  - Configurable max upload size via `MAX_UPLOAD_SIZE_MB`
+  - Optional startup storage initialization via `DOSSIECLEAN_INIT_STORAGE`
+  - Fixed `/api/save` success payload and temporary file cleanup
+- Updated CI and security workflows for repeatable public-repo checks
+- Updated pre-commit config to avoid missing-baseline failures
+
+### Removed
+- Legacy environment-specific connectivity scripts from `tests/` (moved out of CI path)
 
 ### Security
 - Added security policy and vulnerability reporting guidelines
