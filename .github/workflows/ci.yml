@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Lint
@@ -21,16 +24,16 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 black isort
+          pip install -r requirements-dev.txt
 
       - name: Check code formatting with Black
-        run: black --check --line-length=100 app.py tests/
+        run: black --check --line-length=100 tests/
 
       - name: Check import sorting with isort
-        run: isort --check-only --profile=black --line-length=100 app.py tests/
+        run: isort --check-only --profile=black --line-length=100 tests/
 
       - name: Lint with flake8
-        run: flake8 app.py tests/ --max-line-length=100 --extend-ignore=E203,W503
+        run: flake8 tests/ --max-line-length=100 --extend-ignore=E203,W503
 
   test:
     name: Test (Python ${{ matrix.python-version }})
@@ -39,6 +42,9 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+
+    env:
+      DOSSIECLEAN_INIT_STORAGE: 'false'
 
     steps:
       - uses: actions/checkout@v4
@@ -60,20 +66,17 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov
+          pip install -r requirements-dev.txt
 
       - name: Run tests
-        run: pytest tests/ -v --tb=short
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          QDRANT_URL: ${{ secrets.QDRANT_URL }}
-          QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
+        run: pytest -v --tb=short
 
   build:
     name: Build Check
     runs-on: ubuntu-latest
     needs: [lint, test]
+    env:
+      DOSSIECLEAN_INIT_STORAGE: 'false'
     steps:
       - uses: actions/checkout@v4
 

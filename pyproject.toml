@@ -68,6 +68,8 @@ Homepage = "https://github.com/samikd35/Dossieclean_pdfvault"
 Documentation = "https://github.com/samikd35/Dossieclean_pdfvault#readme"
 Repository = "https://github.com/samikd35/Dossieclean_pdfvault.git"
 Issues = "https://github.com/samikd35/Dossieclean_pdfvault/issues"
+Support = "https://github.com/samikd35/Dossieclean_pdfvault/blob/main/SUPPORT.md"
+Security = "https://github.com/samikd35/Dossieclean_pdfvault/security/policy"
 Changelog = "https://github.com/samikd35/Dossieclean_pdfvault/blob/main/CHANGELOG.md"
 
 [tool.black]

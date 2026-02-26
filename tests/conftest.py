@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Environment Fixtures
 # ============================================
 
+
 @pytest.fixture(scope="session")
 def test_env():
     """Set up test environment variables."""
@@ -25,7 +26,7 @@ def test_env():
         "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY", "test-key"),
         "AZURE_STORAGE_CONNECTION_STRING": os.environ.get(
             "AZURE_STORAGE_CONNECTION_STRING",
-            "DefaultEndpointsProtocol=https;AccountName=test;AccountKey=test;EndpointSuffix=core.windows.net"
+            "DefaultEndpointsProtocol=https;AccountName=test;AccountKey=test;EndpointSuffix=core.windows.net",
         ),
         "AZURE_CONTAINER_NAME": os.environ.get("AZURE_CONTAINER_NAME", "test-container"),
         "QDRANT_URL": os.environ.get("QDRANT_URL", "http://localhost:6333"),
@@ -35,6 +36,7 @@ def test_env():
         "CHUNK_SIZE": "512",
         "CHUNK_OVERLAP": "50",
         "SECRET_KEY": "test-secret-key",
+        "DOSSIECLEAN_INIT_STORAGE": "false",
     }
 
     with patch.dict(os.environ, env_vars):
@@ -45,16 +47,21 @@ def test_env():
 # Flask App Fixtures
 # ============================================
 
-@pytest.fixture(scope="module")
-def app(test_env):
+
+@pytest.fixture(scope="session")
+def app(test_env, tmp_path_factory):
     """Create Flask application for testing."""
     # Import here to ensure environment is set up first
     from app import app as flask_app
 
-    flask_app.config.update({
-        "TESTING": True,
-        "WTF_CSRF_ENABLED": False,
-    })
+    upload_dir = tmp_path_factory.mktemp("uploads")
+    flask_app.config.update(
+        {
+            "TESTING": True,
+            "WTF_CSRF_ENABLED": False,
+            "UPLOAD_FOLDER": str(upload_dir),
+        }
+    )
 
     yield flask_app
 
@@ -74,6 +81,7 @@ def runner(app):
 # ============================================
 # File Fixtures
 # ============================================
+
 
 @pytest.fixture
 def temp_dir():
@@ -145,6 +153,7 @@ def sample_metadata():
 # Mock Fixtures
 # ============================================
 
+
 @pytest.fixture
 def mock_openai():
     """Mock OpenAI API calls."""
@@ -156,7 +165,9 @@ def mock_openai():
         # Mock metadata extraction response
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
-        mock_response.choices[0].message.content = """{
+        mock_response.choices[
+            0
+        ].message.content = """{
             "title": "Test Document",
             "authors": ["Test Author"],
             "year": "2024",
@@ -212,6 +223,7 @@ def mock_azure_blob():
 # ============================================
 # Markers
 # ============================================
+
 
 def pytest_configure(config):
     """Configure custom pytest markers."""
