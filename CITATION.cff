@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use DossieClean in research, please cite this software."
+title: "DossieClean"
+version: "1.0.0"
+date-released: 2025-01-01
+license: MIT
+authors:
+  - family-names: "Contributors"
+    given-names: "DossieClean"
+repository-code: "https://github.com/samikd35/Dossieclean_pdfvault"
+url: "https://github.com/samikd35/Dossieclean_pdfvault"
+abstract: "Flask application for PDF ingestion, AI metadata extraction, and vector storage for semantic search."
+keywords:
+  - pdf
+  - semantic-search
+  - vector-database
+  - flask

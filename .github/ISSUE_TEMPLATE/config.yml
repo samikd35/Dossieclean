@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: https://github.com/samikd35/Dossieclean_pdfvault/security/advisories/new
+    about: Report security vulnerabilities privately via GitHub Security Advisories.
+  - name: Usage & Support Questions
+    url: https://github.com/samikd35/Dossieclean_pdfvault/blob/main/SUPPORT.md
+    about: Review support channels and troubleshooting guidance.

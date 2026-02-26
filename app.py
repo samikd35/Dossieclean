@@ -1,3 +1,4 @@
+import utils.session
 import os
 import json
 import uuid
@@ -26,6 +27,7 @@ import base64
 # Configure logging
 logger = logging.getLogger("dossieclean")
 logger.setLevel(logging.INFO)
+logger.propagate = False
 
 # Configure file handler
 file_handler = logging.FileHandler("dossieclean.log")
@@ -40,9 +42,10 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 file_handler.setFormatter(formatter)
 console_handler.setFormatter(formatter)
 
-# Add handlers to logger
-logger.addHandler(file_handler)
-logger.addHandler(console_handler)
+# Add handlers to logger once (pytest/imports can load this module multiple times)
+if not logger.handlers:
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
 
 # Set Azure storage logging to WARNING level to avoid request/response logs
 logging.getLogger('azure').setLevel(logging.WARNING)
@@ -70,9 +73,25 @@ class CustomJSONEncoder(DefaultJSONProvider):
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "default_secret_key")
+
+secret_key = os.environ.get("SECRET_KEY")
+if not secret_key:
+    secret_key = os.urandom(32).hex()
+    logger.warning(
+        WARNING_SYMBOL
+        + " SECRET_KEY is not set. Using an ephemeral key; sessions will reset on restart."
+    )
+
+app.config["SECRET_KEY"] = secret_key
 app.config["UPLOAD_FOLDER"] = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
-app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024 * 1024 * 100  # 100GB max upload size
+try:
+    max_upload_size_mb = int(os.environ.get("MAX_UPLOAD_SIZE_MB", "100"))
+except ValueError:
+    max_upload_size_mb = 100
+    logger.warning(
+        WARNING_SYMBOL + " MAX_UPLOAD_SIZE_MB is invalid. Falling back to 100 MB."
+    )
+app.config["MAX_CONTENT_LENGTH"] = max_upload_size_mb * 1024 * 1024
 
 # Configure Flask's logging to hide repetitive API polling logs
 class FilterPollRequests(logging.Filter):
@@ -127,6 +146,12 @@ metadata_prompt = """From the provided PDF content, extract the following metada
 If a field is not found, use an empty string "" or empty list [] as appropriate.
 Return the result as a JSON object.
 """
+
+# Storage clients are initialized lazily or during startup, depending on environment.
+qdrant_client = None
+blob_service_client = None
+container_client = None
+collection_name = os.environ.get("COLLECTION_NAME", "AAU_PDF")
 
 # Helper function to upload PDF to Azure Blob Storage
 def upload_pdf_to_azure(file_path, metadata):
@@ -950,8 +975,12 @@ def initialize_storage():
         # Don't re-raise the exception to allow the application to continue
 
 # Initialize Azure and Qdrant connections at startup
-with app.app_context():
-    initialize_storage()
+should_init_storage = os.environ.get("DOSSIECLEAN_INIT_STORAGE", "true").strip().lower()
+if should_init_storage not in {"0", "false", "no"}:
+    with app.app_context():
+        initialize_storage()
+else:
+    logger.info("[STORAGE] Skipping startup storage initialization (DOSSIECLEAN_INIT_STORAGE=false)")
 
 @app.route("/choose_processing", methods=["GET"])
 def choose_processing():
@@ -1777,21 +1806,24 @@ def api_save():
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     file.save(file_path)
-    
-    result = save_pdf_to_db(file_path, metadata)
-    
-    if result:
-        return jsonify({
-            "status": "success",
-            "message": "Document saved successfully",
-            "document_id": result["doc_id"],
-            "file_id": result["file_id"]
-        })
-    else:
-        return jsonify({
-            "status": "error",
-            "message": "Failed to save document"
-        }), 500
+
+    try:
+        result = save_pdf_to_db(file_path, metadata)
+
+        if result and result.get("success", False):
+            document_id = result.get("document_id") or metadata.get("document_id")
+            return jsonify(
+                {
+                    "status": "success",
+                    "message": "Document saved successfully",
+                    "document_id": document_id,
+                }
+            )
+
+        return jsonify({"status": "error", "message": "Failed to save document"}), 500
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 def get_document_stats():
     """Get document statistics for the dashboard from Azure and Qdrant"""
@@ -2339,4 +2371,8 @@ def batch_status(batch_id):
     return render_template("batch_status.html", batch_id=batch_id)
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(
+        host=os.environ.get("HOST", "0.0.0.0"),
+        port=int(os.environ.get("PORT", "5000")),
+        debug=os.environ.get("FLASK_DEBUG", "false").strip().lower() == "true",
+    )
