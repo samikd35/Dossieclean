@@ -41,4 +41,4 @@ ipython>=8.0.0
 
 # HTTP testing
 httpx>=0.24.0
-responses>=0.23.0
+responses>=0.26.0
