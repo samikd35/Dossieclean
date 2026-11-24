@@ -32,7 +32,7 @@ pip-audit>=2.5.0
 pre-commit>=3.0.0
 
 # Documentation
-sphinx>=6.0.0
+sphinx>=7.4.7
 sphinx-rtd-theme>=1.2.0
 
 # Debugging
