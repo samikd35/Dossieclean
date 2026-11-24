@@ -40,5 +40,5 @@ ipdb>=0.13.0
 ipython>=8.0.0
 
 # HTTP testing
-httpx>=0.24.0
+httpx>=0.28.1
 responses>=0.23.0
